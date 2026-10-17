@@ -28,3 +28,7 @@ rustc-ice-*.txt
 
 /target
 *.lock
+
+# macOS
+
+.DS_Store
