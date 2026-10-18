@@ -1,9 +1,8 @@
 use std::env;
-use xmpkit::{XmpFile};
+use xmpkit::XmpFile;
 use xmptool::get_all_persons_shown;
 
 fn main() {
-
     let args: Vec<String> = env::args().collect();
 
     let file_path: &String = &args[1];
@@ -19,5 +18,5 @@ fn main() {
         }
     } else {
         println!("No xmp here!");
-    }    
+    }
 }
