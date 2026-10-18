@@ -1,5 +1,5 @@
 use xmpkit::core::namespace::ns;
-use xmpkit::XmpMeta;
+use xmpkit::{XmpMeta, XmpValue};
 
 pub fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
@@ -24,6 +24,13 @@ pub fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: &String) ->
         }
     }
     false
+}
+
+pub fn append_person_shown(meta: &mut XmpMeta, name_to_append: &String) {
+    if !check_person_shown_name_exists(meta, name_to_append) {
+        let value_to_append = XmpValue::String(name_to_append.to_string());
+        let _ = meta.append_array_item(ns::IPTC_EXT, "PersonInImage", value_to_append);
+    }
 }
 
 #[cfg(test)]
@@ -134,5 +141,99 @@ mod tests {
             &xmp_meta,
             &String::from("Test Name")
         ));
+    }
+
+    #[test]
+    fn test_append_person_shown_with_new_xmp() {
+        let mut xmp_meta: XmpMeta = XmpMeta::new();
+
+        let name_to_append: String = String::from("Test Name");
+
+        let result = append_person_shown(&mut xmp_meta, &name_to_append);
+
+        assert_eq!(result, ());
+
+        let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
+
+        assert_eq!(all_persons_shown.len(), 1);
+    }
+
+    #[test]
+    fn test_append_person_shown_with_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+
+        let name_to_append: String = String::from("Test Name");
+
+        let result = append_person_shown(&mut xmp_meta, &name_to_append);
+
+        assert_eq!(result, ());
+
+        let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
+
+        assert_eq!(all_persons_shown.len(), 1);
+    }
+
+    #[test]
+    fn test_append_person_shown_with_xmp_name_exists() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/">
+               <Iptc4xmpExt:PersonInImage>
+                <rdf:Bag>
+                 <rdf:li>Test Name</rdf:li>
+                </rdf:Bag>
+               </Iptc4xmpExt:PersonInImage>
+              </rdf:Description>
+             </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+
+        let name_to_append: String = String::from("Test Name");
+
+        let result = append_person_shown(&mut xmp_meta, &name_to_append);
+
+        assert_eq!(result, ());
+
+        let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
+
+        assert_eq!(all_persons_shown.len(), 1);
+    }
+
+    #[test]
+    fn test_append_person_shown_with_xmp_name_does_not_exist() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/">
+               <Iptc4xmpExt:PersonInImage>
+                <rdf:Bag>
+                 <rdf:li>My Name</rdf:li>
+                 <rdf:li>Your Name</rdf:li>
+                 <rdf:li>Their Name</rdf:li>
+                </rdf:Bag>
+               </Iptc4xmpExt:PersonInImage>
+              </rdf:Description>
+             </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+
+        let name_to_append: String = String::from("Test Name");
+
+        let result = append_person_shown(&mut xmp_meta, &name_to_append);
+
+        assert_eq!(result, ());
+
+        let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
+
+        assert_eq!(all_persons_shown.len(), 4);
     }
 }
