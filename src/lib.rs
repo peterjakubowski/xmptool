@@ -15,9 +15,9 @@ pub fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     None
 }
 
-pub fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: String) -> bool {
+pub fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: &String) -> bool {
     if let Some(all_person_shown_names) = get_all_persons_shown(meta) {
-        for name in all_person_shown_names {
+        for name in &all_person_shown_names {
             if name == name_to_check {
                 return true;
             }
@@ -80,7 +80,7 @@ mod tests {
 
         assert!(!check_person_shown_name_exists(
             &xmp_meta,
-            String::from("Test Name")
+            &String::from("Test Name")
         ));
     }
 
@@ -105,7 +105,7 @@ mod tests {
 
         assert!(check_person_shown_name_exists(
             &xmp_meta,
-            String::from("Test Name")
+            &String::from("Test Name")
         ));
     }
 
@@ -132,7 +132,7 @@ mod tests {
 
         assert!(!check_person_shown_name_exists(
             &xmp_meta,
-            String::from("Test Name")
+            &String::from("Test Name")
         ));
     }
 }
