@@ -30,7 +30,7 @@ pub fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: String) -> 
 mod tests {
     use super::*;
 
-    fn set_up(xmp_packet: &str) -> XmpMeta {
+    fn parse_xmp_packet(xmp_packet: &str) -> XmpMeta {
         let xmp_meta: XmpMeta = XmpMeta::parse(xmp_packet).unwrap_or(XmpMeta::new());
 
         xmp_meta
@@ -40,7 +40,7 @@ mod tests {
     fn test_get_all_persons_shown_with_no_xmp() {
         let xmp_packet: &str = r#"<??>"#;
 
-        let xmp_meta: XmpMeta = set_up(xmp_packet);
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
 
         let result = get_all_persons_shown(&xmp_meta);
 
@@ -64,7 +64,7 @@ mod tests {
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
 
-        let xmp_meta: XmpMeta = set_up(xmp_packet);
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
 
         let result = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
 
@@ -76,7 +76,7 @@ mod tests {
     fn test_check_person_shown_name_exists_with_no_xmp() {
         let xmp_packet: &str = r#"<??>"#;
 
-        let xmp_meta: XmpMeta = set_up(xmp_packet);
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
 
         assert!(!check_person_shown_name_exists(
             &xmp_meta,
@@ -101,7 +101,7 @@ mod tests {
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
 
-        let xmp_meta: XmpMeta = set_up(xmp_packet);
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
 
         assert!(check_person_shown_name_exists(
             &xmp_meta,
@@ -128,7 +128,7 @@ mod tests {
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
 
-        let xmp_meta: XmpMeta = set_up(xmp_packet);
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
 
         assert!(!check_person_shown_name_exists(
             &xmp_meta,
