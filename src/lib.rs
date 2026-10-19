@@ -1,6 +1,8 @@
 use xmpkit::core::namespace::ns;
 use xmpkit::{XmpMeta, XmpValue};
 
+pub mod models;
+
 pub fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
 
