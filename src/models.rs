@@ -1,5 +1,6 @@
 use std::process;
 
+#[derive(Debug)]
 pub enum Action {
     Read,
     Write,
@@ -14,6 +15,7 @@ impl Action {
         }
     }
 }
+#[derive(Debug)]
 pub enum MetadataField {
     Persons,
     Regions,
@@ -32,15 +34,17 @@ impl MetadataField {
     }
 }
 
+#[derive(Debug)]
 pub struct Config {
     pub action: Action,
     pub file_path: String,
     pub meta_field: MetadataField,
+    pub value_to_append: Option<String>,
 }
 
 impl Config {
     pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 4 {
+        if args.len() < 3 {
             return Err("not enough arguments");
         }
 
@@ -63,10 +67,104 @@ impl Config {
                 process::exit(1);
             }
         };
+
+        if matches!(action, Action::Write) {
+            if args.len() < 4 {
+                return Err("missing value to append argument");
+            }
+
+            let value_to_append: String = args[4].clone();
+
+            return Ok(Config {
+                action,
+                file_path,
+                meta_field,
+                value_to_append: Some(value_to_append),
+            });
+        }
         Ok(Config {
             action,
             file_path,
             meta_field,
+            value_to_append: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::assert_matches;
+
+    #[test]
+    fn test_build_config_returns_ok() {
+        let mut args: Vec<String> = Vec::new();
+        args.push(String::from("xmptool"));
+        args.push(String::from("read"));
+        args.push(String::from("file_path.jpg"));
+        args.push(String::from("persons"));
+
+        let result = Config::build(&args);
+        assert_matches!(result, Ok(Config { .. }))
+    }
+
+    #[test]
+    fn test_build_config_raises_error_too_few_arguments() {
+        let mut args: Vec<String> = Vec::new();
+        args.push(String::from("xmptool"));
+
+        let result = Config::build(&args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), String::from("not enough arguments"));
+    }
+
+    #[test]
+    fn test_metadata_field_from_str_persons_returns_ok() {
+        let input_value: String = String::from("persons");
+        let result = MetadataField::from_str(&input_value);
+        assert_matches!(result, Ok(MetadataField::Persons))
+    }
+
+    #[test]
+    fn test_metadata_field_from_str_regions_returns_ok() {
+        let input_value: String = String::from("regions");
+        let result = MetadataField::from_str(&input_value);
+        assert_matches!(result, Ok(MetadataField::Regions))
+    }
+
+    #[test]
+    fn test_metadata_field_from_str_raises_error_invalid_field() {
+        let input_value = String::from("people");
+        let result = MetadataField::from_str(&input_value);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            String::from("Invalid field 'people'. Choose 'persons' or regions'.")
+        )
+    }
+
+    #[test]
+    fn test_action_from_str_read_returns_ok() {
+        let input_value: String = String::from("read");
+        let result = Action::from_str(&input_value);
+        assert_matches!(result, Ok(Action::Read))
+    }
+
+    #[test]
+    fn test_action_from_str_write_returns_ok() {
+        let input_value: String = String::from("write");
+        let result = Action::from_str(&input_value);
+        assert_matches!(result, Ok(Action::Write))
+    }
+
+    #[test]
+    fn test_action_from_str_raises_error_invalid_action() {
+        let input_value = String::from("open");
+        let result = Action::from_str(&input_value);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            String::from("Invalid action 'open'. Choose 'read' or 'write'.")
+        )
     }
 }
