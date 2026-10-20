@@ -6,10 +6,10 @@ A Rust-based CLI tool for reading and writing XMP photo metadata, powered by xmp
 # to read metadata
 cargo run -- read <path> <field>
 cargo run -- read path/to/img.jpg persons
-cargo run -- read path/to/img.jpg regions
+cargo run -- read path/to/img.jpg regions  # unimplimented
 
 # to write metadata
 cargo run -- write <path> <field> <value>
-cargo run -- write path/to/img.jpg persons "My Name"
-cargo run -- write path/to/img.jpg regions "Your Name"
+cargo run -- write path/to/img.jpg persons "My Name"  # unimplimented
+cargo run -- write path/to/img.jpg regions "Your Name"  # unimplimented
 ```
