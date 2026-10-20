@@ -2,8 +2,8 @@ use std::env;
 use std::error::Error;
 use std::process;
 use xmpkit::XmpFile;
-use xmptool::get_all_persons_shown;
-use xmptool::models::{Action, Config, MetadataField};
+use xmptool::models::{Action, Config};
+use xmptool::{read_xmp_meta, write_xmp_meta};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -21,28 +21,14 @@ fn main() {
 
 fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let mut file = XmpFile::new();
-    let _ = file.open(config.file_path);
-
     if matches!(config.action, Action::Read) {
-        println!("Reading file!");
+        println!("Reading file: {}", config.file_path);
+        read_xmp_meta(&config, &mut file);
     } else {
-        println!("Writing file!");
+        println!("Reading file for update: {}", config.file_path);
+        write_xmp_meta(&config, &mut file);
+        file.save(&config.file_path)?;
     }
-
-    if matches!(config.meta_field, MetadataField::Persons) {
-        println!("Field: PersonInImage");
-    } else {
-        println!("Field: Regions");
-    }
-
-    if let Some(meta) = file.get_xmp() {
-        if let Some(persons_shown) = get_all_persons_shown(meta) {
-            println!("{:#?}", persons_shown);
-        } else {
-            println!("No persons shown!");
-        }
-    } else {
-        println!("No xmp here!");
-    }
+    file.close();
     Ok(())
 }

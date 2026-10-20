@@ -1,9 +1,37 @@
+use models::{Config, MetadataField};
 use xmpkit::core::namespace::ns;
-use xmpkit::{XmpMeta, XmpValue};
+use xmpkit::{XmpFile, XmpMeta, XmpOptions, XmpValue};
 
 pub mod models;
 
-pub fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
+pub fn read_xmp_meta(config: &Config, file: &mut XmpFile) {
+    let _ = file.open(&config.file_path);
+    if let Some(meta) = file.get_xmp() {
+        if matches!(config.meta_field, MetadataField::Persons) {
+            let persons = get_all_persons_shown(&meta).unwrap_or(Vec::new());
+            println!("Field: PersonInImage {:?}", persons);
+        } else {
+            let regions = get_all_regions(&meta).unwrap_or(Vec::new());
+            println!("Field: Regions {:?}", regions);
+        }
+    }
+}
+
+pub fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
+    let _ = file.open_with(&config.file_path, XmpOptions::default().for_update());
+    let mut meta = file.get_xmp().cloned().unwrap_or_else(XmpMeta::new);
+    if matches!(config.meta_field, MetadataField::Persons) {
+        // PersonInImage append value logic
+        append_person_shown(&mut meta, &config.value_to_append.clone().unwrap());
+        println!("Write to PersonInImage unimplimented");
+    } else {
+        // Regions append value logic
+        println!("Write to Regions unimplimented");
+    }
+    file.put_xmp(meta);
+}
+
+fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
 
     if let Some(n) = meta.get_array_size(ns::IPTC_EXT, "PersonInImage") {
@@ -17,7 +45,11 @@ pub fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     None
 }
 
-pub fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: &String) -> bool {
+fn get_all_regions(_meta: &XmpMeta) -> Option<Vec<String>> {
+    None
+}
+
+fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: &String) -> bool {
     if let Some(all_person_shown_names) = get_all_persons_shown(meta) {
         for name in &all_person_shown_names {
             if name == name_to_check {
@@ -28,7 +60,7 @@ pub fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: &String) ->
     false
 }
 
-pub fn append_person_shown(meta: &mut XmpMeta, name_to_append: &String) {
+fn append_person_shown(meta: &mut XmpMeta, name_to_append: &String) {
     if !check_person_shown_name_exists(meta, name_to_append) {
         let value_to_append = XmpValue::String(name_to_append.to_string());
         let _ = meta.append_array_item(ns::IPTC_EXT, "PersonInImage", value_to_append);
@@ -44,6 +76,12 @@ mod tests {
 
         xmp_meta
     }
+
+    #[test]
+    fn test_read_xmp_meta() {}
+
+    #[test]
+    fn test_write_xmp_meta() {}
 
     #[test]
     fn test_get_all_persons_shown_with_no_xmp() {
