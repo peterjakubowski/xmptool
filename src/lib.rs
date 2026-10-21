@@ -1,4 +1,4 @@
-use models::{Config, MetadataField, Face, AppliedToDimensions, Area};
+use models::{AppliedToDimensions, Area, Config, MetadataField, Region, RegionType};
 use xmpkit::core::namespace::ns;
 use xmpkit::{is_namespace_registered, register_namespace, XmpFile, XmpMeta, XmpOptions, XmpValue};
 
@@ -15,7 +15,7 @@ pub fn read_xmp_meta(config: &Config, file: &mut XmpFile) {
             let persons: Vec<String> = get_all_persons_shown(&meta).unwrap_or(Vec::new());
             println!("Field: PersonInImage {:?}", persons);
         } else {
-            let regions: Vec<Face> = get_all_regions(&meta).unwrap_or(Vec::new());
+            let regions: Vec<Region> = get_all_regions(&meta).unwrap_or(Vec::new());
             println!("Field: Regions {:?}", regions);
         }
     }
@@ -145,9 +145,9 @@ fn get_mwg_regions_area(meta: &XmpMeta, idx: usize) -> Area {
     Area { w, h, x, y, unit }
 }
 
-fn get_all_regions(meta: &XmpMeta) -> Option<Vec<Face>> {
+fn get_all_regions(meta: &XmpMeta) -> Option<Vec<Region>> {
     check_and_register_mwg_namespace();
-    let mut result: Vec<Face> = Vec::new();
+    let mut result: Vec<Region> = Vec::new();
     let dimensions: AppliedToDimensions = get_mwg_regions_applied_to_dimensions(meta);
     if let Some(n) = meta.get_array_size(MWG_NAMESPACE, "Regions/RegionList") {
         for i in 1..n + 1 {
@@ -235,7 +235,7 @@ mod tests {
     fn test_get_all_regions_with_no_xmp() {
         let xmp_packet: &str = r#"<??>"#;
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-        let result: Option<Vec<Face>> = get_all_regions(&xmp_meta);
+        let result: Option<Vec<Region>> = get_all_regions(&xmp_meta);
         assert_eq!(result, None);
     }
 
@@ -275,19 +275,19 @@ mod tests {
                 </x:xmpmeta>
             <?xpacket end="w"?>"#;
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-        let result: Vec<Face> = get_all_regions(&xmp_meta).unwrap_or(Vec::new());
+        let result: Vec<Region> = get_all_regions(&xmp_meta).unwrap_or(Vec::new());
         assert_eq!(result.len(), 1);
-        let face: &Face = &result[0];
-        assert_eq!(face.person_shown, "Felix");
-        assert_eq!(face.region_type, "Face");
-        assert_eq!(face.area.w, 0.1085);
-        assert_eq!(face.area.h, 0.0732);
-        assert_eq!(face.area.x, 0.3358);
-        assert_eq!(face.area.y, 0.2803);
-        assert_eq!(face.area.unit, "normalized");
-        assert_eq!(face.dimensions.img_width, 2400);
-        assert_eq!(face.dimensions.img_height, 1600);
-        assert_eq!(face.dimensions.unit, "pixel");
+        let region: &Region = &result[0];
+        assert_eq!(region.region_name, "Felix");
+        assert_matches!(region.region_type, RegionType::Pet);
+        assert_eq!(region.area.w, 0.1085);
+        assert_eq!(region.area.h, 0.0732);
+        assert_eq!(region.area.x, 0.3358);
+        assert_eq!(region.area.y, 0.2803);
+        assert_eq!(region.area.unit, "normalized");
+        assert_eq!(region.dimensions.img_width, 2400);
+        assert_eq!(region.dimensions.img_height, 1600);
+        assert_eq!(region.dimensions.unit, "pixel");
     }
 
     #[test]
