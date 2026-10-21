@@ -30,6 +30,23 @@ pub fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
         println!("Write to PersonInImage unimplimented");
     } else {
         // Regions append value logic
+        let dummy_region: Region = Region {
+            region_type: RegionType::Face,
+            region_name: String::from("Dummy Name"),
+            dimensions: AppliedToDimensions {
+                img_width: 100,
+                img_height: 100,
+                unit: String::from("pixel"),
+            },
+            area: Area {
+                w: 0.1085,
+                h: 0.0732,
+                x: 0.3358,
+                y: 0.2803,
+                unit: String::from("normalized"),
+            },
+        };
+        append_region(&mut meta, dummy_region);
         println!("Write to Regions unimplimented");
     }
     file.put_xmp(meta);
