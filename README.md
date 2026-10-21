@@ -8,7 +8,7 @@ A Rust-based CLI tool for reading and writing XMP photo metadata, powered by xmp
 # to read metadata
 cargo run -- read <path> <field>
 cargo run -- read path/to/img.jpg persons
-cargo run -- read path/to/img.jpg regions  # unimplimented
+cargo run -- read path/to/img.jpg regions
 
 # to write metadata
 cargo run -- write <path> <field> <value>
@@ -71,7 +71,10 @@ Prefix: `mwg-rs`
 <?xpacket begin="" id=""?>
     <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
         <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-            <rdf:Description rdf:about="" xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+            <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+                            xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
                 <mwg-rs:Regions rdf:parseType="Resource">
                     <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
                         <stDim:h>1600</stDim:h>
