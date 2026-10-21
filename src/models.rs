@@ -214,4 +214,22 @@ mod tests {
             String::from("Invalid action 'open'. Choose 'read' or 'write'.")
         )
     }
+
+    #[test]
+    fn test_region_type_from_str_face_returns_ok() {
+        let input_value: String = String::from("Face");
+        let result = RegionType::from_str(&input_value);
+        assert_matches!(result, Ok(RegionType::Face));
+    }
+
+    #[test]
+    fn test_region_type_from_str_raises_error_invalid_type() {
+        let input_value = String::from("Cat");
+        let result = RegionType::from_str(&input_value);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            String::from("Invalid region type 'Cat'. Choose 'face', 'pet', 'focus' or 'barcode'.")
+        )
+    }
 }
