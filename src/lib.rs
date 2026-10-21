@@ -246,6 +246,8 @@ fn append_region(meta: &mut XmpMeta, region_to_append: Region) {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches;
+
     use super::*;
 
     fn parse_xmp_packet(xmp_packet: &str) -> XmpMeta {
@@ -323,7 +325,7 @@ mod tests {
                                                 <stArea:y>0.2803</stArea:y>
                                             </mwg-rs:Area>
                                             <mwg-rs:Name>Felix</mwg-rs:Name>
-                                            <mwg-rs:Type>Face</mwg-rs:Type>
+                                            <mwg-rs:Type>Pet</mwg-rs:Type>
                                         </rdf:li>
                                     </rdf:Bag>
                                 </mwg-rs:RegionList>
@@ -407,6 +409,100 @@ mod tests {
     }
 
     #[test]
+    fn test_check_region_name_exists_with_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        assert!(!check_region_name_exists(
+            &xmp_meta,
+            &String::from("Test Name")
+        ));
+    }
+
+    #[test]
+    fn test_check_region_name_exists_with_xmp() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+                <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+                            xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
+                            <mwg-rs:Regions rdf:parseType="Resource">
+                                <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
+                                    <stDim:h>1600</stDim:h>
+                                    <stDim:unit>pixel</stDim:unit>
+                                    <stDim:w>2400</stDim:w>
+                                </mwg-rs:AppliedToDimensions>
+                                <mwg-rs:RegionList>
+                                    <rdf:Bag>
+                                        <rdf:li rdf:parseType="Resource">
+                                            <mwg-rs:Area rdf:parseType="Resource">
+                                                <stArea:h>0.0732</stArea:h>
+                                                <stArea:unit>normalized</stArea:unit>
+                                                <stArea:w>0.1085</stArea:w>
+                                                <stArea:x>0.3358</stArea:x>
+                                                <stArea:y>0.2803</stArea:y>
+                                            </mwg-rs:Area>
+                                            <mwg-rs:Name>Test Name</mwg-rs:Name>
+                                            <mwg-rs:Type>Face</mwg-rs:Type>
+                                        </rdf:li>
+                                    </rdf:Bag>
+                                </mwg-rs:RegionList>
+                            </mwg-rs:Regions>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        assert!(check_region_name_exists(
+            &xmp_meta,
+            &String::from("Test Name")
+        ));
+    }
+
+    #[test]
+    fn test_check_region_name_exists_with_xmp_no_match() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+                <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+                            xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
+                            <mwg-rs:Regions rdf:parseType="Resource">
+                                <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
+                                    <stDim:h>1600</stDim:h>
+                                    <stDim:unit>pixel</stDim:unit>
+                                    <stDim:w>2400</stDim:w>
+                                </mwg-rs:AppliedToDimensions>
+                                <mwg-rs:RegionList>
+                                    <rdf:Bag>
+                                        <rdf:li rdf:parseType="Resource">
+                                            <mwg-rs:Area rdf:parseType="Resource">
+                                                <stArea:h>0.0732</stArea:h>
+                                                <stArea:unit>normalized</stArea:unit>
+                                                <stArea:w>0.1085</stArea:w>
+                                                <stArea:x>0.3358</stArea:x>
+                                                <stArea:y>0.2803</stArea:y>
+                                            </mwg-rs:Area>
+                                            <mwg-rs:Name>Felix</mwg-rs:Name>
+                                            <mwg-rs:Type>Face</mwg-rs:Type>
+                                        </rdf:li>
+                                    </rdf:Bag>
+                                </mwg-rs:RegionList>
+                            </mwg-rs:Regions>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        assert!(!check_region_name_exists(
+            &xmp_meta,
+            &String::from("Test Name")
+        ));
+    }
+
+    #[test]
     fn test_append_person_shown_with_new_xmp() {
         let mut xmp_meta: XmpMeta = XmpMeta::new();
         let name_to_append: String = String::from("Test Name");
@@ -476,4 +572,49 @@ mod tests {
         let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
         assert_eq!(all_persons_shown.len(), 4);
     }
+
+    #[test]
+    fn test_check_applied_dimensions_exists_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        assert!(!check_applied_to_dimensions_exists(&xmp_meta));
+    }
+
+    #[test]
+    fn test_check_applied_dimensions_exists_with_xmp() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+                <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#">
+                            <mwg-rs:Regions rdf:parseType="Resource">
+                                <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
+                                    <stDim:h>1600</stDim:h>
+                                    <stDim:unit>pixel</stDim:unit>
+                                    <stDim:w>2400</stDim:w>
+                                </mwg-rs:AppliedToDimensions>
+                            </mwg-rs:Regions>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        assert!(check_applied_to_dimensions_exists(&xmp_meta));
+    }
+
+    #[test]
+    fn test_set_applied_to_dimension_with_no_xmp() {}
+
+    #[test]
+    fn test_set_applied_to_dimension_with_xmp() {}
+
+    #[test]
+    fn test_append_region_with_no_xmp() {}
+
+    #[test]
+    fn test_append_region_with_xmp_name_exists() {}
+
+    #[test]
+    fn test_append_region_with_xmp_names_does_not_exist() {}
 }
