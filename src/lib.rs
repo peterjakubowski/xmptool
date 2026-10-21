@@ -168,17 +168,23 @@ fn get_all_regions(meta: &XmpMeta) -> Option<Vec<Region>> {
     let dimensions: AppliedToDimensions = get_mwg_regions_applied_to_dimensions(meta);
     if let Some(n) = meta.get_array_size(MWG_NAMESPACE, "Regions/RegionList") {
         for i in 1..n + 1 {
-            if let Some(person_shown) =
-                meta.get_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]", i), "Name")
-            {
-                let area: Area = get_mwg_regions_area(meta, i);
-                result.push(Face {
-                    region_type: String::from("Face"),
-                    person_shown: person_shown.to_string(),
-                    dimensions: dimensions.clone(),
-                    area,
-                });
-            }
+            let region_type: String = meta
+                .get_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]", i), "Type")
+                .unwrap_or(XmpValue::String(String::from("Face")))
+                .to_string();
+            let region_type: RegionType =
+                RegionType::from_str(&region_type).unwrap_or(RegionType::Face);
+            let region_name: String = meta
+                .get_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]", i), "Name")
+                .unwrap_or(XmpValue::String(String::from("Missing Name")))
+                .to_string();
+            let area: Area = get_mwg_regions_area(meta, i);
+            result.push(Region {
+                region_type,
+                region_name,
+                dimensions: dimensions.clone(),
+                area,
+            });
         }
         return Some(result);
     }
@@ -200,6 +206,41 @@ fn append_person_shown(meta: &mut XmpMeta, name_to_append: &String) {
     if !check_person_shown_name_exists(meta, name_to_append) {
         let value_to_append = XmpValue::String(name_to_append.to_string());
         let _ = meta.append_array_item(ns::IPTC_EXT, "PersonInImage", value_to_append);
+    }
+}
+
+fn check_region_name_exists(meta: &XmpMeta, name_to_check: &String) -> bool {
+    if let Some(all_region_names) = get_all_regions(meta) {
+        for name in &all_region_names {
+            if &name.region_name == name_to_check {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn check_applied_to_dimensions_exists(meta: &XmpMeta) -> bool {
+    meta.has_property(MWG_NAMESPACE, "Regions/AppliedToDimensions")
+}
+
+fn set_applied_to_dimensions(meta: &mut XmpMeta, dimensions: AppliedToDimensions) {
+    if let Err(e) = meta.set_struct_field(
+        MWG_NAMESPACE,
+        "Regions/AppliedToDimensions",
+        "stDim:h",
+        XmpValue::Integer(dimensions.img_height.into()),
+    ) {
+        eprintln!("Error {}", e);
+    }
+}
+
+fn append_region(meta: &mut XmpMeta, region_to_append: Region) {
+    if !check_region_name_exists(meta, &region_to_append.region_name) {
+        if !check_applied_to_dimensions_exists(&meta) {
+            set_applied_to_dimensions(meta, region_to_append.dimensions);
+            println!("Append new region unimplimented.");
+        }
     }
 }
 
