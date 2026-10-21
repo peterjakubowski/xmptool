@@ -2,7 +2,7 @@ use std::env;
 use std::error::Error;
 use std::process;
 use xmpkit::XmpFile;
-use xmptool::models::{Action, Config};
+use xmptool::config::{Action, Config};
 use xmptool::{read_xmp_meta, write_xmp_meta};
 
 fn main() {

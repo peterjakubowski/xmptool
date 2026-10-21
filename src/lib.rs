@@ -1,7 +1,9 @@
-use models::{AppliedToDimensions, Area, Config, MetadataField, Region, RegionType};
+use config::{Config, MetadataField};
+use models::{AppliedToDimensions, Area, Region, RegionType};
 use xmpkit::core::namespace::ns;
 use xmpkit::{is_namespace_registered, register_namespace, XmpFile, XmpMeta, XmpOptions, XmpValue};
 
+pub mod config;
 pub mod models;
 
 const MWG_NAMESPACE: &str = "http://www.metadataworkinggroup.com/schemas/regions/";
