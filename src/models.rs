@@ -1,5 +1,27 @@
 use std::process;
 
+#[derive(Debug, PartialEq)]
+pub enum RegionType {
+    Face,
+    Pet,
+    Focus,
+    BarCode,
+}
+
+impl RegionType {
+    pub fn from_str(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().as_str() {
+            "face" => Ok(RegionType::Face),
+            "pet" => Ok(RegionType::Pet),
+            "focus" => Ok(RegionType::Focus),
+            "barcode" => Ok(RegionType::BarCode),
+            _ => Err(format!(
+                "Invalid region type '{}'. Choose 'face', 'pet', 'focus' or 'barcode'.",
+                s
+            )),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Face {
