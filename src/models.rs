@@ -24,9 +24,9 @@ impl RegionType {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Face {
-    pub region_type: String,
-    pub person_shown: String,
+pub struct Region {
+    pub region_type: RegionType,
+    pub region_name: String,
     pub dimensions: AppliedToDimensions,
     pub area: Area,
 }
@@ -62,6 +62,7 @@ impl Action {
         }
     }
 }
+
 #[derive(Debug)]
 pub enum MetadataField {
     Persons,
