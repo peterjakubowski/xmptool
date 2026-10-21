@@ -1,5 +1,30 @@
 use std::process;
 
+
+#[derive(Debug, PartialEq)]
+pub struct Face {
+    pub region_type: String,
+    pub person_shown: String,
+    pub dimensions: AppliedToDimensions,
+    pub area: Area,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AppliedToDimensions {
+    pub img_width: i32,
+    pub img_height: i32,
+    pub unit: String,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Area {
+    pub w: f32,
+    pub h: f32,
+    pub x: f32,
+    pub y: f32,
+    pub unit: String,
+}
+
 #[derive(Debug)]
 pub enum Action {
     Read,
