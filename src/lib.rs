@@ -33,7 +33,6 @@ pub fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
 
 fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
-
     if let Some(n) = meta.get_array_size(ns::IPTC_EXT, "PersonInImage") {
         for i in 0..n + 1 {
             if let Some(person_shown) = meta.get_array_item(ns::IPTC_EXT, "PersonInImage", i) {
@@ -73,7 +72,6 @@ mod tests {
 
     fn parse_xmp_packet(xmp_packet: &str) -> XmpMeta {
         let xmp_meta: XmpMeta = XmpMeta::parse(xmp_packet).unwrap_or(XmpMeta::new());
-
         xmp_meta
     }
 
@@ -86,11 +84,8 @@ mod tests {
     #[test]
     fn test_get_all_persons_shown_with_no_xmp() {
         let xmp_packet: &str = r#"<??>"#;
-
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         let result = get_all_persons_shown(&xmp_meta);
-
         assert_eq!(result, None);
     }
 
@@ -110,11 +105,8 @@ mod tests {
              </rdf:RDF>
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
-
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         let result = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
-
         assert_eq!(result.len(), 1);
         assert_eq!(result, ["Test Name"]);
     }
@@ -147,9 +139,7 @@ mod tests {
              </rdf:RDF>
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
-
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         assert!(check_person_shown_name_exists(
             &xmp_meta,
             &String::from("Test Name")
@@ -174,9 +164,7 @@ mod tests {
              </rdf:RDF>
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
-
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         assert!(!check_person_shown_name_exists(
             &xmp_meta,
             &String::from("Test Name")
@@ -186,32 +174,21 @@ mod tests {
     #[test]
     fn test_append_person_shown_with_new_xmp() {
         let mut xmp_meta: XmpMeta = XmpMeta::new();
-
         let name_to_append: String = String::from("Test Name");
-
         let result = append_person_shown(&mut xmp_meta, &name_to_append);
-
         assert_eq!(result, ());
-
         let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
-
         assert_eq!(all_persons_shown.len(), 1);
     }
 
     #[test]
     fn test_append_person_shown_with_no_xmp() {
         let xmp_packet: &str = r#"<??>"#;
-
         let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         let name_to_append: String = String::from("Test Name");
-
         let result = append_person_shown(&mut xmp_meta, &name_to_append);
-
         assert_eq!(result, ());
-
         let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
-
         assert_eq!(all_persons_shown.len(), 1);
     }
 
@@ -231,17 +208,11 @@ mod tests {
              </rdf:RDF>
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
-
         let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         let name_to_append: String = String::from("Test Name");
-
         let result = append_person_shown(&mut xmp_meta, &name_to_append);
-
         assert_eq!(result, ());
-
         let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
-
         assert_eq!(all_persons_shown.len(), 1);
     }
 
@@ -263,17 +234,11 @@ mod tests {
              </rdf:RDF>
             </x:xmpmeta>
             <?xpacket end="w"?>"#;
-
         let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         let name_to_append: String = String::from("Test Name");
-
         let result = append_person_shown(&mut xmp_meta, &name_to_append);
-
         assert_eq!(result, ());
-
         let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
-
         assert_eq!(all_persons_shown.len(), 4);
     }
 }
