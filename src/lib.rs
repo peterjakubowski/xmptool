@@ -1,17 +1,21 @@
-use models::{Config, MetadataField};
+use models::{Config, MetadataField, Face, AppliedToDimensions, Area};
 use xmpkit::core::namespace::ns;
-use xmpkit::{XmpFile, XmpMeta, XmpOptions, XmpValue};
+use xmpkit::{is_namespace_registered, register_namespace, XmpFile, XmpMeta, XmpOptions, XmpValue};
 
 pub mod models;
+
+const MWG_NAMESPACE: &str = "http://www.metadataworkinggroup.com/schemas/regions/";
+const ADOBE_DIM_NAMESPACE: &str = "http://ns.adobe.com/xap/1.0/sType/Dimensions#";
+const ADOBE_AREA_NAMESPACE: &str = "http://ns.adobe.com/xmp/sType/Area#";
 
 pub fn read_xmp_meta(config: &Config, file: &mut XmpFile) {
     let _ = file.open(&config.file_path);
     if let Some(meta) = file.get_xmp() {
         if matches!(config.meta_field, MetadataField::Persons) {
-            let persons = get_all_persons_shown(&meta).unwrap_or(Vec::new());
+            let persons: Vec<String> = get_all_persons_shown(&meta).unwrap_or(Vec::new());
             println!("Field: PersonInImage {:?}", persons);
         } else {
-            let regions = get_all_regions(&meta).unwrap_or(Vec::new());
+            let regions: Vec<Face> = get_all_regions(&meta).unwrap_or(Vec::new());
             println!("Field: Regions {:?}", regions);
         }
     }
@@ -44,7 +48,123 @@ fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     None
 }
 
-fn get_all_regions(_meta: &XmpMeta) -> Option<Vec<String>> {
+fn check_and_register_mwg_namespace() {
+    if !is_namespace_registered(MWG_NAMESPACE) {
+        // println!("Registering namespace: {}", MWG_NAMESPACE);
+        if let Err(e) = register_namespace(MWG_NAMESPACE, "mwg-rs") {
+            eprintln!("Error: {}", e);
+        }
+    }
+    if !is_namespace_registered(ADOBE_DIM_NAMESPACE) {
+        // println!("Registering namespace {}", ADOBE_DIM_NAMESPACE);
+        if let Err(e) = register_namespace(ADOBE_DIM_NAMESPACE, "stDim") {
+            eprintln!("Error: {}", e);
+        }
+    }
+    if !is_namespace_registered(ADOBE_AREA_NAMESPACE) {
+        // println!("Registering namespace {}", ADOBE_AREA_NAMESPACE);
+        if let Err(e) = register_namespace(ADOBE_AREA_NAMESPACE, "stArea") {
+            eprintln!("Error: {}", e);
+        }
+    }
+}
+
+fn get_mwg_regions_applied_to_dimensions(meta: &XmpMeta) -> AppliedToDimensions {
+    let img_width: i32 = meta
+        .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:w")
+        .unwrap_or(XmpValue::Integer(0))
+        .to_string()
+        .parse()
+        .unwrap();
+    let img_height: i32 = meta
+        .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:h")
+        .unwrap_or(XmpValue::Integer(0))
+        .to_string()
+        .parse()
+        .unwrap();
+    let unit: String = meta
+        .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:unit")
+        .unwrap_or(XmpValue::String(String::from("default-px")))
+        .to_string();
+    AppliedToDimensions {
+        img_width,
+        img_height,
+        unit,
+    }
+}
+
+fn get_mwg_regions_area(meta: &XmpMeta, idx: usize) -> Area {
+    let w: f32 = meta
+        .get_struct_field(
+            MWG_NAMESPACE,
+            &format!("Regions/RegionList[{}]/Area", idx),
+            "stArea:w",
+        )
+        .unwrap_or(XmpValue::String(String::from("0.0")))
+        .to_string()
+        .parse()
+        .unwrap();
+    let h: f32 = meta
+        .get_struct_field(
+            MWG_NAMESPACE,
+            &format!("Regions/RegionList[{}]/Area", idx),
+            "stArea:h",
+        )
+        .unwrap_or(XmpValue::String(String::from("0.0")))
+        .to_string()
+        .parse()
+        .unwrap();
+    let x: f32 = meta
+        .get_struct_field(
+            MWG_NAMESPACE,
+            &format!("Regions/RegionList[{}]/Area", idx),
+            "stArea:x",
+        )
+        .unwrap_or(XmpValue::String(String::from("0.0")))
+        .to_string()
+        .parse()
+        .unwrap();
+    let y: f32 = meta
+        .get_struct_field(
+            MWG_NAMESPACE,
+            &format!("Regions/RegionList[{}]/Area", idx),
+            "stArea:y",
+        )
+        .unwrap_or(XmpValue::String(String::from("0.0")))
+        .to_string()
+        .parse()
+        .unwrap();
+    let unit: String = meta
+        .get_struct_field(
+            MWG_NAMESPACE,
+            &format!("Regions/RegionList[{}]/Area", idx),
+            "stArea:unit",
+        )
+        .unwrap_or(XmpValue::String(String::from("default-norm")))
+        .to_string();
+    Area { w, h, x, y, unit }
+}
+
+fn get_all_regions(meta: &XmpMeta) -> Option<Vec<Face>> {
+    check_and_register_mwg_namespace();
+    let mut result: Vec<Face> = Vec::new();
+    let dimensions: AppliedToDimensions = get_mwg_regions_applied_to_dimensions(meta);
+    if let Some(n) = meta.get_array_size(MWG_NAMESPACE, "Regions/RegionList") {
+        for i in 1..n + 1 {
+            if let Some(person_shown) =
+                meta.get_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]", i), "Name")
+            {
+                let area: Area = get_mwg_regions_area(meta, i);
+                result.push(Face {
+                    region_type: String::from("Face"),
+                    person_shown: person_shown.to_string(),
+                    dimensions: dimensions.clone(),
+                    area,
+                });
+            }
+        }
+        return Some(result);
+    }
     None
 }
 
@@ -112,11 +232,68 @@ mod tests {
     }
 
     #[test]
+    fn test_get_all_regions_with_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let result: Option<Vec<Face>> = get_all_regions(&xmp_meta);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_all_regions_with_xmp() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+                <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+                            xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
+                            <mwg-rs:Regions rdf:parseType="Resource">
+                                <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
+                                    <stDim:h>1600</stDim:h>
+                                    <stDim:unit>pixel</stDim:unit>
+                                    <stDim:w>2400</stDim:w>
+                                </mwg-rs:AppliedToDimensions>
+                                <mwg-rs:RegionList>
+                                    <rdf:Bag>
+                                        <rdf:li rdf:parseType="Resource">
+                                            <mwg-rs:Area rdf:parseType="Resource">
+                                                <stArea:h>0.0732</stArea:h>
+                                                <stArea:unit>normalized</stArea:unit>
+                                                <stArea:w>0.1085</stArea:w>
+                                                <stArea:x>0.3358</stArea:x>
+                                                <stArea:y>0.2803</stArea:y>
+                                            </mwg-rs:Area>
+                                            <mwg-rs:Name>Felix</mwg-rs:Name>
+                                            <mwg-rs:Type>Face</mwg-rs:Type>
+                                        </rdf:li>
+                                    </rdf:Bag>
+                                </mwg-rs:RegionList>
+                            </mwg-rs:Regions>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let result: Vec<Face> = get_all_regions(&xmp_meta).unwrap_or(Vec::new());
+        assert_eq!(result.len(), 1);
+        let face: &Face = &result[0];
+        assert_eq!(face.person_shown, "Felix");
+        assert_eq!(face.region_type, "Face");
+        assert_eq!(face.area.w, 0.1085);
+        assert_eq!(face.area.h, 0.0732);
+        assert_eq!(face.area.x, 0.3358);
+        assert_eq!(face.area.y, 0.2803);
+        assert_eq!(face.area.unit, "normalized");
+        assert_eq!(face.dimensions.img_width, 2400);
+        assert_eq!(face.dimensions.img_height, 1600);
+        assert_eq!(face.dimensions.unit, "pixel");
+    }
+
+    #[test]
     fn test_check_person_shown_name_exists_with_no_xmp() {
         let xmp_packet: &str = r#"<??>"#;
-
         let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
-
         assert!(!check_person_shown_name_exists(
             &xmp_meta,
             &String::from("Test Name")
