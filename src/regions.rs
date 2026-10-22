@@ -147,11 +147,28 @@ fn check_applied_to_dimensions_exists(meta: &XmpMeta) -> bool {
 }
 
 fn set_applied_to_dimensions(meta: &mut XmpMeta, dimensions: AppliedToDimensions) {
+    check_and_register_mwg_namespace();
+    if let Err(e) = meta.set_struct_field(
+        MWG_NAMESPACE,
+        "Regions/AppliedToDimensions",
+        "stDim:w",
+        XmpValue::Integer(dimensions.img_width.into()),
+    ) {
+        eprintln!("Error {}", e);
+    }
     if let Err(e) = meta.set_struct_field(
         MWG_NAMESPACE,
         "Regions/AppliedToDimensions",
         "stDim:h",
         XmpValue::Integer(dimensions.img_height.into()),
+    ) {
+        eprintln!("Error {}", e);
+    }
+    if let Err(e) = meta.set_struct_field(
+        MWG_NAMESPACE,
+        "Regions/AppliedToDimensions",
+        "stDim:unit",
+        dimensions.unit.into(),
     ) {
         eprintln!("Error {}", e);
     }
@@ -360,7 +377,17 @@ mod tests {
     }
 
     #[test]
-    fn test_set_applied_to_dimension_with_no_xmp() {}
+    fn test_set_applied_to_dimension_with_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let dimensions: AppliedToDimensions = AppliedToDimensions {
+            img_width: 100,
+            img_height: 100,
+            unit: String::from("pixel"),
+        };
+        set_applied_to_dimensions(&mut xmp_meta, dimensions);
+        assert!(check_applied_to_dimensions_exists(&xmp_meta))
+    }
 
     #[test]
     fn test_set_applied_to_dimension_with_xmp() {}
