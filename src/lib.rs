@@ -1,8 +1,8 @@
 use config::{Action, Config, MetadataField};
-use std::error::Error;
 use models::{AppliedToDimensions, Area, Region, RegionType};
-use persons::{append_person_shown, get_all_persons_shown};
+use persons::{append_person_shown, delete_person_shown, get_all_persons_shown};
 use regions::{append_region, get_all_regions};
+use std::{error::Error, process};
 use xmpkit::{XmpFile, XmpMeta, XmpOptions};
 
 pub mod config;
@@ -15,9 +15,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     if matches!(config.action, Action::Read) {
         println!("Reading file: {}", config.file_path);
         read_xmp_meta(&config, &mut file);
-    } else {
+    } else if matches!(config.action, Action::Write) {
         println!("Reading file for update: {}", config.file_path);
         write_xmp_meta(&config, &mut file);
+        file.save(&config.file_path)?;
+    } else {
+        println!("Reading file for update: {}", config.file_path);
+        delete_xmp_meta(&config, &mut file);
         file.save(&config.file_path)?;
     }
     file.close();
@@ -67,6 +71,20 @@ fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
     file.put_xmp(meta);
 }
 
+fn delete_xmp_meta(config: &Config, file: &mut XmpFile) {
+    let _ = file.open_with(&config.file_path, XmpOptions::default().for_update());
+    let mut meta: XmpMeta = file.get_xmp().cloned().unwrap_or_else(XmpMeta::new);
+    if matches!(config.meta_field, MetadataField::Persons) {
+        // PersonInImage delete value logic
+        if let Err(e) = delete_person_shown(&mut meta, &config.value_to_append.clone().unwrap()) {
+            eprintln!("Error: {}", e);
+            process::exit(1);
+        }
+    } else {
+        println!("Delete MWG XMP metadata unimplimented");
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -80,4 +98,7 @@ mod tests {
 
     #[test]
     fn test_write_xmp_meta() {}
+
+    #[test]
+    fn test_delete_xmp_meta() {}
 }
