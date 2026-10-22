@@ -1,4 +1,5 @@
-use config::{Config, MetadataField};
+use config::{Action, Config, MetadataField};
+use std::error::Error;
 use models::{AppliedToDimensions, Area, Region, RegionType};
 use persons::{append_person_shown, get_all_persons_shown};
 use regions::{append_region, get_all_regions};
@@ -9,7 +10,21 @@ pub mod models;
 pub mod persons;
 pub mod regions;
 
-pub fn read_xmp_meta(config: &Config, file: &mut XmpFile) {
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let mut file = XmpFile::new();
+    if matches!(config.action, Action::Read) {
+        println!("Reading file: {}", config.file_path);
+        read_xmp_meta(&config, &mut file);
+    } else {
+        println!("Reading file for update: {}", config.file_path);
+        write_xmp_meta(&config, &mut file);
+        file.save(&config.file_path)?;
+    }
+    file.close();
+    Ok(())
+}
+
+fn read_xmp_meta(config: &Config, file: &mut XmpFile) {
     let _ = file.open(&config.file_path);
     if let Some(meta) = file.get_xmp() {
         if matches!(config.meta_field, MetadataField::Persons) {
@@ -22,13 +37,12 @@ pub fn read_xmp_meta(config: &Config, file: &mut XmpFile) {
     }
 }
 
-pub fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
+fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
     let _ = file.open_with(&config.file_path, XmpOptions::default().for_update());
     let mut meta = file.get_xmp().cloned().unwrap_or_else(XmpMeta::new);
     if matches!(config.meta_field, MetadataField::Persons) {
         // PersonInImage append value logic
         append_person_shown(&mut meta, &config.value_to_append.clone().unwrap());
-        println!("Write to PersonInImage unimplimented");
     } else {
         // Regions append value logic
         let dummy_region: Region = Region {
@@ -57,6 +71,9 @@ pub fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
 mod tests {
 
     // use super::*;
+
+    #[test]
+    fn test_run() {}
 
     #[test]
     fn test_read_xmp_meta() {}
