@@ -1,10 +1,10 @@
 use xmpkit::core::namespace::ns;
-use xmpkit::{XmpMeta, XmpValue};
+use xmpkit::{XmpError, XmpMeta, XmpValue};
 
 pub fn get_all_persons_shown(meta: &XmpMeta) -> Option<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
     if let Some(n) = meta.get_array_size(ns::IPTC_EXT, "PersonInImage") {
-        for i in 0..n + 1 {
+        for i in 0..n {
             if let Some(person_shown) = meta.get_array_item(ns::IPTC_EXT, "PersonInImage", i) {
                 result.push(person_shown.to_string());
             }
@@ -30,6 +30,28 @@ pub fn append_person_shown(meta: &mut XmpMeta, name_to_append: &String) {
         let value_to_append = XmpValue::String(name_to_append.to_string());
         let _ = meta.append_array_item(ns::IPTC_EXT, "PersonInImage", value_to_append);
     }
+}
+
+fn get_person_shown_index(meta: &XmpMeta, name_to_check: &String) -> Option<usize> {
+    if let Some(n) = meta.get_array_size(ns::IPTC_EXT, "PersonInImage") {
+        for i in 0..n {
+            if let Some(person_shown) = meta.get_array_item(ns::IPTC_EXT, "PersonInImage", i) {
+                if &person_shown.to_string() == name_to_check {
+                    return Some(i);
+                }
+            }
+        }
+    }
+    None
+}
+
+pub fn delete_person_shown(meta: &mut XmpMeta, name_to_delete: &String) -> Result<(), XmpError> {
+    if let Some(index) = get_person_shown_index(meta, name_to_delete) {
+        if let Err(e) = meta.delete_array_item(ns::IPTC_EXT, "PersonInImage", index) {
+            return Err(e);
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -200,5 +222,75 @@ mod tests {
         assert_eq!(result, ());
         let all_persons_shown = get_all_persons_shown(&xmp_meta).unwrap_or(Vec::new());
         assert_eq!(all_persons_shown.len(), 4);
+    }
+
+    #[test]
+    fn test_get_person_shown_index_with_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let name_to_get_index: String = String::from("Test Name");
+        let result: Option<usize> = get_person_shown_index(&xmp_meta, &name_to_get_index);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_person_shown_index_with_xmp() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/">
+               <Iptc4xmpExt:PersonInImage>
+                <rdf:Bag>
+                 <rdf:li>My Name</rdf:li>
+                 <rdf:li>Your Name</rdf:li>
+                 <rdf:li>Test Name</rdf:li>
+                </rdf:Bag>
+               </Iptc4xmpExt:PersonInImage>
+              </rdf:Description>
+             </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let name_to_get_index: String = String::from("Test Name");
+        let result = get_person_shown_index(&xmp_meta, &name_to_get_index);
+        assert_eq!(result.unwrap(), 2);
+    }
+
+    #[test]
+    fn test_delete_person_shown_with_no_xmp() {
+        let xmp_packet: &str = r#"<??>"#;
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let name_to_delete: String = String::from("Test Name");
+        let result: Result<(), XmpError> = delete_person_shown(&mut xmp_meta, &name_to_delete);
+        assert_eq!(result.unwrap(), ());
+    }
+
+    #[test]
+    fn test_delete_person_shown_with_xmp() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/">
+               <Iptc4xmpExt:PersonInImage>
+                <rdf:Bag>
+                 <rdf:li>My Name</rdf:li>
+                 <rdf:li>Your Name</rdf:li>
+                 <rdf:li>Test Name</rdf:li>
+                </rdf:Bag>
+               </Iptc4xmpExt:PersonInImage>
+              </rdf:Description>
+             </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let name_to_delete: String = String::from("Test Name");
+        assert_eq!(get_all_persons_shown(&xmp_meta).unwrap().len(), 3);
+        assert!(check_person_shown_name_exists(&xmp_meta, &name_to_delete));
+        let result: Result<(), XmpError> = delete_person_shown(&mut xmp_meta, &name_to_delete);
+        assert_eq!(result.unwrap(), ());
+        assert_eq!(get_all_persons_shown(&xmp_meta).unwrap().len(), 2);
+        assert!(!check_person_shown_name_exists(&xmp_meta, &name_to_delete));
     }
 }
