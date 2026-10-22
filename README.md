@@ -14,6 +14,12 @@ cargo run -- read path/to/img.jpg regions
 cargo run -- write <path> <field> <value>
 cargo run -- write path/to/img.jpg persons "My Name"
 cargo run -- write path/to/img.jpg regions "Your Name"  # unimplimented
+
+# to delete metadata
+cargo run -- delete <path> <field> <value>
+cargo run -- delete path/to/img.jpg persons "My Name"
+cargo run -- delete path/to/img.jpg regions "Your Name"  # unimplimented
+
 ```
 
 ## Supported XMP metadata fields
