@@ -4,6 +4,7 @@ use std::process;
 pub enum Action {
     Read,
     Write,
+    Delete,
 }
 
 impl Action {
@@ -11,7 +12,11 @@ impl Action {
         match s.to_lowercase().as_str() {
             "read" => Ok(Action::Read),
             "write" | "append" => Ok(Action::Write),
-            _ => Err(format!("Invalid action '{}'. Choose 'read' or 'write'.", s)),
+            "delete" | "remove" => Ok(Action::Delete),
+            _ => Err(format!(
+                "Invalid action '{}'. Choose 'read', 'write' or 'delete'.",
+                s
+            )),
         }
     }
 }
@@ -45,7 +50,7 @@ pub struct Config {
 
 impl Config {
     pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
+        if args.len() < 4 {
             return Err("not enough arguments");
         }
 
@@ -69,9 +74,9 @@ impl Config {
             }
         };
 
-        if matches!(action, Action::Write) {
-            if args.len() < 4 {
-                return Err("missing value to append argument");
+        if matches!(action, Action::Write) | matches!(action, Action::Delete) {
+            if args.len() < 5 {
+                return Err("missing value argument");
             }
 
             let value_to_append: String = args[4].clone();
@@ -105,7 +110,7 @@ mod tests {
         args.push(String::from("file_path.jpg"));
         args.push(String::from("persons"));
 
-        let result = Config::build(&args);
+        let result: Result<Config, &str> = Config::build(&args);
         assert_matches!(result, Ok(Config { .. }))
     }
 
@@ -114,9 +119,35 @@ mod tests {
         let mut args: Vec<String> = Vec::new();
         args.push(String::from("xmptool"));
 
-        let result = Config::build(&args);
+        let result: Result<Config, &str> = Config::build(&args);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), String::from("not enough arguments"));
+    }
+
+    #[test]
+    fn test_build_config_raises_error_too_few_arguments_when_write() {
+        let mut args: Vec<String> = Vec::new();
+        args.push(String::from("xmptool"));
+        args.push(String::from("write"));
+        args.push(String::from("file_path.jpg"));
+        args.push(String::from("persons"));
+
+        let result: Result<Config, &str> = Config::build(&args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), String::from("missing value argument"));
+    }
+
+    #[test]
+    fn test_build_config_raises_error_too_few_arguments_when_delete() {
+        let mut args: Vec<String> = Vec::new();
+        args.push(String::from("xmptool"));
+        args.push(String::from("delete"));
+        args.push(String::from("file_path.jpg"));
+        args.push(String::from("persons"));
+
+        let result: Result<Config, &str> = Config::build(&args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), String::from("missing value argument"));
     }
 
     #[test]
@@ -135,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_metadata_field_from_str_raises_error_invalid_field() {
-        let input_value = String::from("people");
+        let input_value: String = String::from("people");
         let result = MetadataField::from_str(&input_value);
         assert!(result.is_err());
         assert_eq!(
@@ -159,13 +190,20 @@ mod tests {
     }
 
     #[test]
+    fn test_action_from_str_delete_returns_ok() {
+        let input_value: String = String::from("delete");
+        let result = Action::from_str(&input_value);
+        assert_matches!(result, Ok(Action::Delete));
+    }
+
+    #[test]
     fn test_action_from_str_raises_error_invalid_action() {
-        let input_value = String::from("open");
+        let input_value: String = String::from("open");
         let result = Action::from_str(&input_value);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            String::from("Invalid action 'open'. Choose 'read' or 'write'.")
+            String::from("Invalid action 'open'. Choose 'read', 'write' or 'delete'.")
         )
     }
 }
