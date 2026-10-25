@@ -1,6 +1,14 @@
 # Rust-XMP-Metadata-Tool
 
-A Rust-based CLI tool for reading and writing XMP photo metadata, powered by xmpkit.
+A Rust-based CLI tool for reading and writing XMP photo metadata using XMPKit. 
+
+## XMPKit
+
+[XMPKit](https://github.com/cavivie/xmpkit/) is a pure Rust implementation of Adobe's XMP (Extensible Metadata Platform) Toolkit.
+
+Docs: https://docs.rs/xmpkit/latest/xmpkit/
+
+Crates.io: https://crates.io/crates/xmpkit
 
 ## Usage
 
