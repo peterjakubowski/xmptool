@@ -31,8 +31,8 @@ pub struct Region {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AppliedToDimensions {
-    pub img_width: i32,
-    pub img_height: i32,
+    pub img_width: i64,
+    pub img_height: i64,
     pub unit: String,
 }
 

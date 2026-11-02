@@ -27,13 +27,13 @@ fn check_and_register_mwg_namespace() {
 }
 
 fn get_mwg_regions_applied_to_dimensions(meta: &XmpMeta) -> AppliedToDimensions {
-    let img_width: i32 = meta
+    let img_width: i64 = meta
         .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:w")
         .unwrap_or(XmpValue::Integer(0))
         .to_string()
         .parse()
         .unwrap();
-    let img_height: i32 = meta
+    let img_height: i64 = meta
         .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:h")
         .unwrap_or(XmpValue::Integer(0))
         .to_string()
@@ -152,7 +152,7 @@ fn set_applied_to_dimensions(meta: &mut XmpMeta, dimensions: AppliedToDimensions
         MWG_NAMESPACE,
         "Regions/AppliedToDimensions",
         "stDim:w",
-        XmpValue::Integer(dimensions.img_width.into()),
+        XmpValue::Integer(dimensions.img_width),
     ) {
         eprintln!("Error {}", e);
     }
@@ -160,7 +160,7 @@ fn set_applied_to_dimensions(meta: &mut XmpMeta, dimensions: AppliedToDimensions
         MWG_NAMESPACE,
         "Regions/AppliedToDimensions",
         "stDim:h",
-        XmpValue::Integer(dimensions.img_height.into()),
+        XmpValue::Integer(dimensions.img_height),
     ) {
         eprintln!("Error {}", e);
     }
