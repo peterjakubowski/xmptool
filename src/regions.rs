@@ -168,7 +168,7 @@ fn set_applied_to_dimensions(meta: &mut XmpMeta, dimensions: AppliedToDimensions
         MWG_NAMESPACE,
         "Regions/AppliedToDimensions",
         "stDim:unit",
-        dimensions.unit.into(),
+        XmpValue::String(dimensions.unit),
     ) {
         eprintln!("Error {}", e);
     }
