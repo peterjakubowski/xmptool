@@ -178,9 +178,9 @@ pub fn append_region(meta: &mut XmpMeta, region_to_append: Region) {
     if !check_region_name_exists(meta, &region_to_append.region_name) {
         if !check_applied_to_dimensions_exists(&meta) {
             set_applied_to_dimensions(meta, region_to_append.dimensions);
-            println!("Append new region unimplimented.");
         }
     }
+    println!("Append new region unimplimented.");
 }
 
 #[cfg(test)]
