@@ -390,7 +390,42 @@ mod tests {
     }
 
     #[test]
-    fn test_set_applied_to_dimension_with_xmp() {}
+    fn test_set_applied_to_dimension_with_xmp() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/">
+               <Iptc4xmpExt:PersonInImage>
+                <rdf:Bag>
+                 <rdf:li>Test Name</rdf:li>
+                </rdf:Bag>
+               </Iptc4xmpExt:PersonInImage>
+              </rdf:Description>
+             </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let dimensions: AppliedToDimensions = AppliedToDimensions {
+            img_width: 100,
+            img_height: 100,
+            unit: String::from("pixel"),
+        };
+        set_applied_to_dimensions(&mut xmp_meta, dimensions);
+        assert!(check_applied_to_dimensions_exists(&xmp_meta));
+        let img_width: XmpValue = xmp_meta
+            .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:w")
+            .unwrap();
+        let img_height: XmpValue = xmp_meta
+            .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:h")
+            .unwrap();
+        let unit: XmpValue = xmp_meta
+            .get_struct_field(MWG_NAMESPACE, "Regions/AppliedToDimensions", "stDim:unit")
+            .unwrap();
+        assert_eq!(img_width.as_int(), Some(100));
+        assert_eq!(img_height.as_int(), Some(100));
+        assert_eq!(unit, XmpValue::String(String::from("pixel")));
+    }
 
     #[test]
     fn test_append_region_with_no_xmp() {}
