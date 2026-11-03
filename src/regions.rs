@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::models::{AppliedToDimensions, Area, Region, RegionType};
 use xmpkit::{is_namespace_registered, register_namespace, XmpMeta, XmpValue};
 
@@ -179,6 +180,33 @@ pub fn append_region(meta: &mut XmpMeta, region_to_append: Region) {
         if !check_applied_to_dimensions_exists(&meta) {
             set_applied_to_dimensions(meta, region_to_append.dimensions);
         }
+        // set new values here
+        let empty_structure: HashMap<String, XmpValue> = HashMap::new();
+        let _ = meta.append_array_item(MWG_NAMESPACE, "Regions/RegionList", XmpValue::Structure(empty_structure));
+        if let Some(n) = meta.get_array_size(MWG_NAMESPACE, "Regions/RegionList") {
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]", n), "Name", XmpValue::String(region_to_append.region_name)) {
+                eprintln!("Error {}", e);
+            }
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]", n), "Type", XmpValue::String(region_to_append.region_type.to_string())) {
+                eprintln!("Error {}", e);
+            }
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]/Area", n), "stArea:w", XmpValue::String(region_to_append.area.w.to_string())) {
+                eprintln!("Error {}", e);
+            }
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]/Area", n), "stArea:h", XmpValue::String(region_to_append.area.h.to_string())) {
+                eprintln!("Error {}", e);
+            }
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]/Area", n), "stArea:x", XmpValue::String(region_to_append.area.x.to_string())) {
+                eprintln!("Error {}", e);
+            }
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]/Area", n), "stArea:y", XmpValue::String(region_to_append.area.y.to_string())) {
+                eprintln!("Error {}", e);
+            }
+            if let Err(e) = meta.set_struct_field(MWG_NAMESPACE, &format!("Regions/RegionList[{}]/Area", n), "stArea:unit", XmpValue::String(region_to_append.area.unit.to_string())) {
+                eprintln!("Error {}", e);
+            }
+            
+        }    
     }
     println!("Append new region unimplimented.");
 }
@@ -428,11 +456,139 @@ mod tests {
     }
 
     #[test]
-    fn test_append_region_with_no_xmp() {}
+    fn test_append_region_with_no_xmp() {
+        check_and_register_mwg_namespace();
+        let mut xmp_meta: XmpMeta = XmpMeta::new();
+        let region_type: RegionType = RegionType::Face;
+        let dimensions: AppliedToDimensions = AppliedToDimensions { img_width: 100, img_height: 100, unit: String::from("pixel") };
+        let area: Area = Area { w: 0.5, h: 0.5, x: 0.5, y: 0.5, unit: String::from("normalized") };
+        let new_region: Region = Region { region_type, region_name: String::from("Test Name"), dimensions, area };
+        append_region(&mut xmp_meta, new_region);
+        let all_regions: Vec<Region> = get_all_regions(&xmp_meta).unwrap();
+        assert_eq!(all_regions.len(), 1);
+        let result: &Region = &all_regions[0];
+        assert_eq!(result.region_type, RegionType::Face);
+        assert_eq!(result.region_name, String::from("Test Name"));
+        assert_eq!(result.dimensions.img_width, 100);
+        assert_eq!(result.dimensions.img_height, 100);
+        assert_eq!(result.dimensions.unit, String::from("pixel"));
+        assert_eq!(result.area.w, 0.5);
+        assert_eq!(result.area.h, 0.5);
+        assert_eq!(result.area.x, 0.5);
+        assert_eq!(result.area.y, 0.5);
+        assert_eq!(result.area.unit, String::from("normalized"));
+    }  
 
     #[test]
-    fn test_append_region_with_xmp_name_exists() {}
+    fn test_append_region_with_xmp_name_exists() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+                <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+                            xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
+                            <mwg-rs:Regions rdf:parseType="Resource">
+                                <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
+                                    <stDim:h>1600</stDim:h>
+                                    <stDim:unit>pixel</stDim:unit>
+                                    <stDim:w>2400</stDim:w>
+                                </mwg-rs:AppliedToDimensions>
+                                <mwg-rs:RegionList>
+                                    <rdf:Bag>
+                                        <rdf:li rdf:parseType="Resource">
+                                            <mwg-rs:Area rdf:parseType="Resource">
+                                                <stArea:h>0.0732</stArea:h>
+                                                <stArea:unit>normalized</stArea:unit>
+                                                <stArea:w>0.1085</stArea:w>
+                                                <stArea:x>0.3358</stArea:x>
+                                                <stArea:y>0.2803</stArea:y>
+                                            </mwg-rs:Area>
+                                            <mwg-rs:Name>Felix</mwg-rs:Name>
+                                            <mwg-rs:Type>Face</mwg-rs:Type>
+                                        </rdf:li>
+                                    </rdf:Bag>
+                                </mwg-rs:RegionList>
+                            </mwg-rs:Regions>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let region_type: RegionType = RegionType::Face;
+        let dimensions: AppliedToDimensions = AppliedToDimensions { img_width: 100, img_height: 100, unit: String::from("pixel") };
+        let area: Area = Area { w: 0.5, h: 0.5, x: 0.5, y: 0.5, unit: String::from("normalized") };
+        let new_region: Region = Region { region_type, region_name: String::from("Felix"), dimensions, area };
+        append_region(&mut xmp_meta, new_region);
+        let all_regions: Vec<Region> = get_all_regions(&xmp_meta).unwrap();
+        assert_eq!(all_regions.len(), 1);
+        let result: &Region = &all_regions[0];
+        assert_eq!(result.region_type, RegionType::Face);
+        assert_eq!(result.region_name, String::from("Felix"));
+        assert_eq!(result.dimensions.img_width, 2400);
+        assert_eq!(result.dimensions.img_height, 1600);
+        assert_eq!(result.dimensions.unit, String::from("pixel"));
+        assert_eq!(result.area.w, 0.1085);
+        assert_eq!(result.area.h, 0.0732);
+        assert_eq!(result.area.x, 0.3358);
+        assert_eq!(result.area.y, 0.2803);
+        assert_eq!(result.area.unit, String::from("normalized"));
+
+    }
 
     #[test]
-    fn test_append_region_with_xmp_names_does_not_exist() {}
+    fn test_append_region_with_xmp_names_does_not_exist() {
+        let xmp_packet: &str = r#"<?xpacket begin="" id=""?>
+                <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0">
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <rdf:Description rdf:about="" 
+                            xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+                            xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+                            xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
+                            <mwg-rs:Regions rdf:parseType="Resource">
+                                <mwg-rs:AppliedToDimensions rdf:parseType="Resource">
+                                    <stDim:h>1600</stDim:h>
+                                    <stDim:unit>pixel</stDim:unit>
+                                    <stDim:w>2400</stDim:w>
+                                </mwg-rs:AppliedToDimensions>
+                                <mwg-rs:RegionList>
+                                    <rdf:Bag>
+                                        <rdf:li rdf:parseType="Resource">
+                                            <mwg-rs:Area rdf:parseType="Resource">
+                                                <stArea:h>0.0732</stArea:h>
+                                                <stArea:unit>normalized</stArea:unit>
+                                                <stArea:w>0.1085</stArea:w>
+                                                <stArea:x>0.3358</stArea:x>
+                                                <stArea:y>0.2803</stArea:y>
+                                            </mwg-rs:Area>
+                                            <mwg-rs:Name>Felix</mwg-rs:Name>
+                                            <mwg-rs:Type>Face</mwg-rs:Type>
+                                        </rdf:li>
+                                    </rdf:Bag>
+                                </mwg-rs:RegionList>
+                            </mwg-rs:Regions>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </x:xmpmeta>
+            <?xpacket end="w"?>"#;
+        let mut xmp_meta: XmpMeta = parse_xmp_packet(xmp_packet);
+        let region_type: RegionType = RegionType::Face;
+        let dimensions: AppliedToDimensions = AppliedToDimensions { img_width: 100, img_height: 100, unit: String::from("pixel") };
+        let area: Area = Area { w: 0.5, h: 0.5, x: 0.5, y: 0.5, unit: String::from("normalized") };
+        let new_region: Region = Region { region_type, region_name: String::from("Test Name"), dimensions, area };
+        append_region(&mut xmp_meta, new_region);
+        let all_regions: Vec<Region> = get_all_regions(&xmp_meta).unwrap();
+        assert_eq!(all_regions.len(), 2);
+        let result: &Region = &all_regions[1];
+        assert_eq!(result.region_type, RegionType::Face);
+        assert_eq!(result.region_name, String::from("Test Name"));
+        assert_eq!(result.dimensions.img_width, 2400);
+        assert_eq!(result.dimensions.img_height, 1600);
+        assert_eq!(result.dimensions.unit, String::from("pixel"));
+        assert_eq!(result.area.w, 0.5);
+        assert_eq!(result.area.h, 0.5);
+        assert_eq!(result.area.x, 0.5);
+        assert_eq!(result.area.y, 0.5);
+        assert_eq!(result.area.unit, String::from("normalized"));
+    }
 }
