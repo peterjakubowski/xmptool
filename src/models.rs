@@ -1,9 +1,22 @@
+use std::fmt;
+
 #[derive(Debug, PartialEq)]
 pub enum RegionType {
     Face,
     Pet,
     Focus,
     BarCode,
+}
+
+impl fmt::Display for RegionType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            RegionType::Face => write!(f, "Face"),
+            RegionType::Pet => write!(f, "Pet"),
+            RegionType::Focus => write!(f, "Focus"),
+            RegionType::BarCode => write!(f, "BarCode"),
+        }
+    }
 }
 
 impl RegionType {
