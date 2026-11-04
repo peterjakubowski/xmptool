@@ -1,7 +1,7 @@
 use config::{Action, Config, MetadataField};
 use models::{AppliedToDimensions, Area, Region, RegionType};
 use persons::{append_person_shown, delete_person_shown, get_all_persons_shown};
-use regions::{append_region, get_all_regions};
+use regions::{append_region, delete_region_by_name, get_all_regions};
 use std::{error::Error, process};
 use xmpkit::{XmpFile, XmpMeta, XmpOptions};
 
@@ -47,7 +47,7 @@ fn write_xmp_meta(config: &Config, file: &mut XmpFile) {
     if matches!(config.meta_field, MetadataField::Persons) {
         // PersonInImage append value logic
         append_person_shown(&mut meta, &config.value_to_append.clone().unwrap());
-    } else {
+    } else if matches!(config.meta_field, MetadataField::Regions) {
         // Regions append value logic
         let dummy_region: Region = Region {
             region_type: RegionType::Face,
@@ -80,8 +80,12 @@ fn delete_xmp_meta(config: &Config, file: &mut XmpFile) {
             eprintln!("Error: {}", e);
             process::exit(1);
         }
-    } else {
-        println!("Delete MWG XMP metadata unimplimented");
+    } else if matches!(config.meta_field, MetadataField::Regions) {
+        // Regions delete value logic
+        if let Err(e) = delete_region_by_name(&mut meta, &config.value_to_append.clone().unwrap()) {
+            eprintln!("Error: {}", e);
+            process::exit(1);
+        }
     }
 }
 
