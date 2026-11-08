@@ -27,7 +27,6 @@ rustc-ice-*.txt
 # Added by cargo
 
 /target
-*.lock
 
 # macOS
 
