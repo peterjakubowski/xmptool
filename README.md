@@ -1,6 +1,6 @@
 # Rust-XMP-Metadata-Tool
 
-A Rust-based CLI tool for reading and writing XMP photo metadata using XMPKit. 
+A Rust-based CLI tool for reading and writing Person Shown and MWG Regions XMP photo metadata using XMPKit. 
 
 ## XMPKit
 
