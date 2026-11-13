@@ -28,7 +28,14 @@ fn check_person_shown_name_exists(meta: &XmpMeta, name_to_check: &String) -> boo
 pub fn append_person_shown(meta: &mut XmpMeta, name_to_append: &String) {
     if !check_person_shown_name_exists(meta, name_to_append) {
         let value_to_append = XmpValue::String(name_to_append.to_string());
-        let _ = meta.append_array_item(ns::IPTC_EXT, "PersonInImage", value_to_append);
+        let mut person_shown_array: Vec<XmpValue> = match meta.get_property(ns::IPTC_EXT, "PersonInImage") {
+            Some(XmpValue::Array(arr)) => arr,
+            _ => Vec::new(),
+        };
+        person_shown_array.push(value_to_append);
+        if let Err(err) = meta.set_property(ns::IPTC_EXT, "PersonInImage", XmpValue::Array(person_shown_array)) {
+            eprintln!("Error appending value to person shown array: {}", err);
+        }
     }
 }
 
