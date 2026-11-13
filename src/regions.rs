@@ -180,71 +180,35 @@ pub fn append_region(meta: &mut XmpMeta, region_to_append: Region) {
         if !check_applied_to_dimensions_exists(&meta) {
             set_applied_to_dimensions(meta, region_to_append.dimensions);
         }
-        // set new values here
-        let empty_structure: HashMap<String, XmpValue> = HashMap::new();
-        let _ = meta.append_array_item(
-            MWG_NAMESPACE,
-            "Regions/RegionList",
-            XmpValue::Structure(empty_structure),
-        );
-        if let Some(n) = meta.get_array_size(MWG_NAMESPACE, "Regions/RegionList") {
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]", n),
-                "Name",
-                XmpValue::String(region_to_append.region_name),
-            ) {
-                eprintln!("Error {}", e);
-            }
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]", n),
-                "Type",
-                XmpValue::String(region_to_append.region_type.to_string()),
-            ) {
-                eprintln!("Error {}", e);
-            }
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]/Area", n),
-                "stArea:w",
-                XmpValue::String(region_to_append.area.w.to_string()),
-            ) {
-                eprintln!("Error {}", e);
-            }
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]/Area", n),
-                "stArea:h",
-                XmpValue::String(region_to_append.area.h.to_string()),
-            ) {
-                eprintln!("Error {}", e);
-            }
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]/Area", n),
-                "stArea:x",
-                XmpValue::String(region_to_append.area.x.to_string()),
-            ) {
-                eprintln!("Error {}", e);
-            }
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]/Area", n),
-                "stArea:y",
-                XmpValue::String(region_to_append.area.y.to_string()),
-            ) {
-                eprintln!("Error {}", e);
-            }
-            if let Err(e) = meta.set_struct_field(
-                MWG_NAMESPACE,
-                &format!("Regions/RegionList[{}]/Area", n),
-                "stArea:unit",
-                XmpValue::String(region_to_append.area.unit.to_string()),
-            ) {
-                eprintln!("Error {}", e);
-            }
-        }
+        let mut regions_array: Vec<XmpValue> = match meta.get_property(MWG_NAMESPACE, "Regions/RegionList") {
+            Some(XmpValue::Array(arr)) => arr,
+            _ => Vec::new(),
+        };
+        let mut new_region: HashMap<String, XmpValue> = HashMap::new();
+        // set region name field
+        new_region.insert("Name".to_string(), XmpValue::String(region_to_append.region_name));
+        // set region type field
+        new_region.insert("Type".to_string(), XmpValue::String(region_to_append.region_type.to_string()));
+        // set region area structure
+        let mut region_area: HashMap<String, XmpValue> = HashMap::new();
+        // set region area width
+        region_area.insert("stArea:w".to_string(), XmpValue::String(region_to_append.area.w.to_string()));
+        // set region area height
+        region_area.insert("stArea:h".to_string(), XmpValue::String(region_to_append.area.h.to_string()));
+        // set region area x
+        region_area.insert("stArea:x".to_string(), XmpValue::String(region_to_append.area.x.to_string()));
+        // set region area y
+        region_area.insert("stArea:y".to_string(), XmpValue::String(region_to_append.area.y.to_string()));
+        // set region area unit
+        region_area.insert("stArea:unit".to_string(), XmpValue::String(region_to_append.area.unit.to_string()));
+        // insert region area into region structure
+        new_region.insert("Area".to_string(), XmpValue::Structure(region_area));
+        // append the new region to the regions array
+        regions_array.push(XmpValue::Structure(new_region));
+
+        if let Err(err) = meta.set_property(MWG_NAMESPACE, "Regions/RegionList", XmpValue::Array(regions_array)) {
+            eprintln!("Error appending region to the region array: {}", err);
+        };
     }
 }
 
