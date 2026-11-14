@@ -92,10 +92,22 @@ fn delete_xmp_meta(config: &Config, file: &mut XmpFile) {
 #[cfg(test)]
 mod tests {
 
-    // use super::*;
+    use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
-    fn test_run() {}
+    fn test_run() {
+        let temp_file: TempDir = tempfile::tempdir().unwrap();
+        let config: Config = Config { 
+            action: Action::Read, 
+            file_path: temp_file.path().to_str().unwrap().to_string(),
+            meta_field: MetadataField::Persons, 
+            value_to_append: None,
+        };
+        let result = run(config).unwrap();
+        assert_eq!(result, ());
+    }
 
     #[test]
     fn test_read_xmp_meta() {}
